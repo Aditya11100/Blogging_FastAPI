@@ -1,0 +1,12 @@
+# Virtual environments
+Lib/
+Scripts/
+Include/
+pyvenv.cfg
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Environment variables & secrets (important!)
+.env
