@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from schemas import PostCreate, PostResponse, UserCreate, UserResponse
+from schemas import PostCreate, PostUpdate, PostResponse, UserCreate, UserResponse
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -185,3 +185,28 @@ def get_post(post_id:int, db: Annotated[Session, Depends(get_db)]):
         return post
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post Not Found.")
+
+@app.put("/api/post/{post_id}", response_model=PostResponse)
+def update_post_full(post_id:int, post_data: PostCreate, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post).where(models.Post.id==post_id))
+    post = result.scalars().first()
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post Not Found.")
+
+    if post_data.user_id != post.user_id:
+
+        result = db.execute(select(models.User).where(models.User.id == post_data.user_id))
+        user = result.scalars().first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User Not Found.")
+
+    post.title = post_data.title
+    post.content = post_data.content
+    post.user_id = post_data.user_id
+
+    db.commit()
+    db.refresh(post)
+
+    return post
